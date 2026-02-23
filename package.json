@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "accounts:provision": "tsx createAccounts.ts",
+    "accounts:cleanup-student": "tsx createAccountsAdmin.ts"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
@@ -20,8 +22,10 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.9.0",
+    "firebase-admin": "^13.6.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "nodemailer": "^8.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
@@ -38,5 +42,18 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  }
+  },
+  "description": "<div align=\"center\"> <img width=\"1200\" height=\"475\" alt=\"GHBanner\" src=\"https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6\" /> </div>",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YoussefWafik/E3dady.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YoussefWafik/E3dady/issues"
+  },
+  "homepage": "https://github.com/YoussefWafik/E3dady#readme"
 }

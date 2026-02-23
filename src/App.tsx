@@ -18,7 +18,7 @@ function AppContent() {
   const { user, login, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
@@ -26,12 +26,12 @@ function AppContent() {
     e.preventDefault();
     setLoginError('');
     try {
-      await login(username, password);
+      await login(email, password);
       setShowLoginModal(false);
-      setUsername('');
+      setEmail('');
       setPassword('');
     } catch (err) {
-      setLoginError('Invalid username or password');
+      setLoginError('Invalid credentials or no role access');
     }
   };
 
@@ -42,8 +42,8 @@ function AppContent() {
       case 'home': return <Home />;
       case 'league': return <LeagueTable />;
       case 'players': return <PlayerRanking />;
-      case 'servant-dashboard': return <ServantDashboard />;
-      case 'leader-dashboard': return <LeaderDashboard />;
+      case 'servant-dashboard': return user?.role === 'servant' ? <ServantDashboard /> : <Home />;
+      case 'admin-dashboard': return user?.role === 'admin' ? <LeaderDashboard /> : <Home />;
       default: return <Home />;
     }
   };
@@ -113,14 +113,14 @@ function AppContent() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Username</label>
-                  <input
-                    type="text"
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
+                    <input
+                    type="email"
                     required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B3D91] transition-all font-bold"
-                    placeholder="e.g. servant_john"
+                    placeholder="e.g. servantEdady1@e3dady.com"
                   />
                 </div>
                 <div className="space-y-2">

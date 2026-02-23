@@ -14,11 +14,11 @@ export default function Navbar({ onLoginClick, activeTab, setActiveTab }: Navbar
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: Star, roles: ['public', 'servant', 'leader'] },
-    { id: 'league', label: 'League', icon: Trophy, roles: ['public', 'servant', 'leader'] },
-    { id: 'players', label: 'Players', icon: Users, roles: ['public', 'servant', 'leader'] },
+    { id: 'home', label: 'Home', icon: Star, roles: ['public', 'servant', 'admin'] },
+    { id: 'league', label: 'League', icon: Trophy, roles: ['public', 'servant', 'admin'] },
+    { id: 'players', label: 'Players', icon: Users, roles: ['public', 'servant', 'admin'] },
     { id: 'servant-dashboard', label: 'Class', icon: LayoutDashboard, roles: ['servant'] },
-    { id: 'leader-dashboard', label: 'Admin', icon: LayoutDashboard, roles: ['leader'] },
+    { id: 'admin-dashboard', label: 'Admin', icon: LayoutDashboard, roles: ['admin'] },
   ];
 
   const filteredItems = navItems.filter(item => 

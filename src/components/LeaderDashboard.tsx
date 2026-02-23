@@ -1,20 +1,67 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Users, Trophy, CheckCircle, AlertCircle, Search, Filter, Settings } from 'lucide-react';
-import { motion } from 'motion/react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Shield, Users, Trophy, CheckCircle, AlertCircle, Settings } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+type AccountRow = {
+  uid: string;
+  username: string;
+  email: string;
+  role: 'servant' | 'admin';
+  class_id?: number | null;
+  status?: string;
+};
 
 export default function LeaderDashboard() {
-  const { user } = useAuth();
+  const { user, getAuthToken } = useAuth();
   const [stats, setStats] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [servantAccounts, setServantAccounts] = useState<AccountRow[]>([]);
+  const [adminAccounts, setAdminAccounts] = useState<AccountRow[]>([]);
+  const [error, setError] = useState('');
+
+  if (user?.role !== 'admin') {
+    return <div className="text-center font-bold text-red-500">Unauthorized access.</div>;
+  }
 
   useEffect(() => {
-    fetch('/api/leader/dashboard')
-      .then(res => res.json())
-      .then(data => setStats(data));
+    const loadDashboard = async () => {
+      try {
+        const token = await getAuthToken();
+        if (!token) {
+          setError('Missing auth token.');
+          return;
+        }
+
+        const headers = { Authorization: `Bearer ${token}` };
+        const [statsRes, servantsRes, adminsRes] = await Promise.all([
+          fetch('/api/admin/dashboard', { headers }),
+          fetch('/api/admin/accounts?role=servant', { headers }),
+          fetch('/api/admin/accounts?role=admin', { headers }),
+        ]);
+
+        if (!statsRes.ok || !servantsRes.ok || !adminsRes.ok) {
+          setError('Failed to load admin data.');
+          return;
+        }
+
+        const [statsData, servantsData, adminsData] = await Promise.all([
+          statsRes.json(),
+          servantsRes.json(),
+          adminsRes.json(),
+        ]);
+
+        setStats(statsData);
+        setServantAccounts(servantsData);
+        setAdminAccounts(adminsData);
+      } catch {
+        setError('Failed to load admin data.');
+      }
+    };
+
+    loadDashboard();
   }, []);
 
+  if (error) return <div className="text-center font-bold text-red-500">{error}</div>;
   if (!stats) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0B3D91]"></div></div>;
 
   const chartData = [
@@ -182,6 +229,62 @@ export default function LeaderDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-50">
+            <h3 className="font-black text-[#0B3D91] uppercase italic">Servants Table</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                  <th className="px-4 py-3">Username</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Class</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {servantAccounts.map((account) => (
+                  <tr key={account.uid}>
+                    <td className="px-4 py-3 font-bold text-[#0B3D91]">{account.username}</td>
+                    <td className="px-4 py-3 text-gray-600">{account.email}</td>
+                    <td className="px-4 py-3 text-gray-600">{account.class_id ?? '-'}</td>
+                    <td className="px-4 py-3 text-gray-600">{account.status ?? 'active'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-50">
+            <h3 className="font-black text-[#0B3D91] uppercase italic">Admins Table</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                  <th className="px-4 py-3">Username</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {adminAccounts.map((account) => (
+                  <tr key={account.uid}>
+                    <td className="px-4 py-3 font-bold text-[#0B3D91]">{account.username}</td>
+                    <td className="px-4 py-3 text-gray-600">{account.email}</td>
+                    <td className="px-4 py-3 text-gray-600">{account.status ?? 'active'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

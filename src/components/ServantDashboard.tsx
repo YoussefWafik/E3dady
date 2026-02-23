@@ -3,29 +3,49 @@ import { useAuth } from '../context/AuthContext';
 import { CheckCircle2, XCircle, Plus, FileText, BarChart3, Download, UserPlus } from 'lucide-react';
 import { motion } from 'motion/react';
 import * as XLSX from 'xlsx';
+import { createTeam } from "@/services/teamService";
+import { auth } from "@/services/firebase";
 
 export default function ServantDashboard() {
-  const { user } = useAuth();
+  const { user, getAuthToken } = useAuth();
   const [students, setStudents] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<Record<number, boolean>>({});
   const [activeTab, setActiveTab] = useState('attendance');
   const [showAddPoints, setShowAddPoints] = useState<number | null>(null);
   const [pointsAmount, setPointsAmount] = useState(10);
   const [pointsReason, setPointsReason] = useState('Active Participation');
+  const [teamName, setTeamName] = useState("");
+
+  if (user?.role !== 'servant') {
+    return <div className="text-center font-bold text-red-500">Unauthorized access.</div>;
+  }
+
+  const fetchWithAuth = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    const token = await getAuthToken();
+    const headers = new Headers(init.headers);
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    return fetch(input, { ...init, headers });
+  };
 
   useEffect(() => {
-    if (user?.class_id) {
-      fetch(`/api/servant/students/${user.class_id}`)
-        .then(res => res.json())
-        .then(data => setStudents(data));
-    }
+    const loadStudents = async () => {
+      if (!user?.class_id) return;
+      const res = await fetchWithAuth(`/api/servant/students/${user.class_id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setStudents(data);
+    };
+
+    loadStudents();
   }, [user]);
 
   const toggleAttendance = async (studentId: number) => {
     const newStatus = !attendance[studentId];
     setAttendance(prev => ({ ...prev, [studentId]: newStatus }));
     
-    await fetch('/api/servant/attendance', {
+    await fetchWithAuth('/api/servant/attendance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -38,7 +58,7 @@ export default function ServantDashboard() {
   };
 
   const addPoints = async (studentId: number) => {
-    await fetch('/api/servant/points', {
+    await fetchWithAuth('/api/servant/points', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -49,11 +69,25 @@ export default function ServantDashboard() {
       }),
     });
     
-    // Refresh students
-    const res = await fetch(`/api/servant/students/${user?.class_id}`);
+    const res = await fetchWithAuth(`/api/servant/students/${user?.class_id}`);
     const data = await res.json();
     setStudents(data);
     setShowAddPoints(null);
+  };
+
+  const handleCreateTeam = async () => {
+    if (!auth.currentUser) {
+      alert("لازم تكون مسجل دخول!");
+      return;
+    }
+    try {
+      await createTeam(teamName, auth.currentUser.uid);
+      alert("الفريق اتعمل بنجاح!");
+      setTeamName("");
+    } catch (err) {
+      console.error(err);
+      alert("حصل خطأ، حاول تاني.");
+    }
   };
 
   const exportToExcel = () => {
@@ -93,6 +127,7 @@ export default function ServantDashboard() {
           Attendance
           {activeTab === 'attendance' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-[#0B3D91] rounded-t-full" />}
         </button>
+
         <button 
           onClick={() => setActiveTab('scoring')}
           className={`pb-4 px-2 text-sm font-black uppercase tracking-tighter transition-all relative ${activeTab === 'scoring' ? 'text-[#0B3D91]' : 'text-gray-400 hover:text-gray-600'}`}
@@ -100,6 +135,15 @@ export default function ServantDashboard() {
           Weekly Scoring
           {activeTab === 'scoring' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-[#0B3D91] rounded-t-full" />}
         </button>
+
+        <button 
+          onClick={() => setActiveTab('createTeam')}
+          className={`pb-4 px-2 text-sm font-black uppercase tracking-tighter transition-all relative ${activeTab === 'createTeam' ? 'text-[#0B3D91]' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          Create Team
+          {activeTab === 'createTeam' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-[#0B3D91] rounded-t-full" />}
+        </button>
+
         <button 
           onClick={() => setActiveTab('reports')}
           className={`pb-4 px-2 text-sm font-black uppercase tracking-tighter transition-all relative ${activeTab === 'reports' ? 'text-[#0B3D91]' : 'text-gray-400 hover:text-gray-600'}`}
@@ -203,6 +247,28 @@ export default function ServantDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {activeTab === 'createTeam' && (
+          <div className="p-6 space-y-6">
+            <h3 className="font-black text-[#0B3D91] uppercase italic">Create New Team</h3>
+            <div className="max-w-md space-y-4">
+              <input
+                type="text"
+                placeholder="اكتب اسم الفريق"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl font-bold text-gray-700 focus:outline-none focus:border-[#0B3D91] transition-all"
+              />
+              <button
+                onClick={handleCreateTeam}
+                className="flex items-center gap-2 bg-[#0B3D91] text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-[#1a56b8] transition-all shadow-lg shadow-[#0B3D91]/20"
+              >
+                <Plus className="w-4 h-4" />
+                إنشاء الفريق
+              </button>
+            </div>
           </div>
         )}
 
